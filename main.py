@@ -2,8 +2,10 @@ import pandas as pd
 from sklearn import metrics
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
+from sklearn.svm import LinearSVC
 from spacy.lang.de.stop_words import STOP_WORDS
 
 
@@ -22,25 +24,27 @@ def train_model(x,y):
 
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
 
-    pipeline = Pipeline([
-        ("tfidf", TfidfVectorizer(
-            max_features=5000,
-            ngram_range=(1, 2),
-            stop_words= list(STOP_WORDS))),
+    pipelines = {
+        "logreg": Pipeline([
+            ("tfidf", TfidfVectorizer(max_features=20000, ngram_range=(1, 3))),
+            ("clf", LogisticRegression(max_iter=500))
+        ]),
 
-        ("classifier", RandomForestClassifier(
-            n_estimators=600,
-            max_depth=None,
-            class_weight="balanced",
-            random_state=42))
-    ])
+        "svc": Pipeline([
+            ("tfidf", TfidfVectorizer(max_features=20000, ngram_range=(1, 3))),
+            ("clf", LinearSVC())
+        ]),
 
-    pipeline.fit(x_train, y_train)
+        "rf": Pipeline([
+            ("tfidf", TfidfVectorizer(max_features=20000)),
+            ("clf", RandomForestClassifier())
+        ])
+    }
 
-    y_pred = pipeline.predict(x_test)
-    print(metrics.classification_report(y_test, y_pred))
-
-
+    for name, pipe in pipelines.items():
+        pipe.fit(x_train, y_train)
+        pred = pipe.predict(x_test)
+        print(name, metrics.f1_score(y_test, pred, average="macro"))
 
 
 if __name__ == "__main__":
