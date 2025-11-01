@@ -13,6 +13,7 @@ def read_csv(path):
     try:
         df = pd.read_csv(path)
         x = df["review_body"]
+        # Combine ratings between 1 and 2 and between 4 and 5 into one class.
         y = df["review_rating"] = df["review_rating"].replace({2: 1})
         y = df["review_rating"] = df["review_rating"].replace({4: 5})
 
@@ -25,17 +26,17 @@ def train_model(x,y):
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
 
     pipelines = {
-        "logreg": Pipeline([
+        "LogisticRegression": Pipeline([
             ("tfidf", TfidfVectorizer(max_features=20000, ngram_range=(1, 3))),
             ("clf", LogisticRegression(max_iter=500))
         ]),
 
-        "svc": Pipeline([
+        "LinearSVC": Pipeline([
             ("tfidf", TfidfVectorizer(max_features=20000, ngram_range=(1, 3))),
             ("clf", LinearSVC())
         ]),
 
-        "rf": Pipeline([
+        "RandomForest": Pipeline([
             ("tfidf", TfidfVectorizer(max_features=20000)),
             ("clf", RandomForestClassifier())
         ])
@@ -45,6 +46,15 @@ def train_model(x,y):
         pipe.fit(x_train, y_train)
         pred = pipe.predict(x_test)
         print(name, metrics.f1_score(y_test, pred, average="macro"))
+
+
+        """
+        Result:
+        LogisticRegression 0.6968254287121018
+        LinearSVC 0.6986601050336964
+        RandomForest 0.5612551859130326
+
+        """
 
 
 if __name__ == "__main__":
